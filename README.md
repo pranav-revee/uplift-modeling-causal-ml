@@ -108,7 +108,17 @@ Execution defaults for this repo:
 Current offline run snapshot (shared split, seed 42):
 - Notebook 02: `two_model_uplift` outperformed naive treated-response on Qini/AUUC.
 - Notebook 03: `T-Learner` performed best among S/T/X on the current split.
+- Notebook 04: the current DR result is from a manual DR-style fallback under current nuisance settings.
 - Notebook 05: uplift-aware targeting policies improved estimated incremental value versus naive and random policies.
+
+Central model summary table (from current offline run):
+
+| Model | Qini | AUUC | Best budget range | Incremental conversions @ top 20% | Incremental revenue @ top 20% | Recommendation |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| two_model_uplift | 3.926 | 25.378 | 0.9 | 21.06 | 2451.13 | Primary deploy candidate |
+| t_learner | 3.926 | 25.378 | 0.9 | 21.06 | 2451.13 | Primary deploy candidate |
+| naive_response | 3.415 | 24.867 | 0.8 | 21.33 | 2482.56 | Baseline only, not causal-targeting aligned |
+| dr_manual_fallback | -1.996 | 19.456 | 0.9 | 9.02 | 1049.32 | Challenger model, needs nuisance tuning |
 
 These are offline holdout estimates and should be treated as directional until online validation.
 

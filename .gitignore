@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
+
+# Local tooling
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Build / artifacts
+dist/
+build/
+*.egg-info/
+
+# Project outputs
+outputs/models/*
+outputs/tables/*
+outputs/figures/*.png
+!outputs/.gitkeep
+
+# IDE
+.vscode/
+.idea/

@@ -1,0 +1,19 @@
+pandas>=2.0
+numpy>=1.24
+matplotlib>=3.7
+seaborn>=0.13
+scikit-learn>=1.3
+scipy>=1.10
+xgboost>=2.0
+lightgbm>=4.0
+torch>=2.2
+umap-learn>=0.5
+jupyter>=1.0
+jupyterlab>=4.0
+ipykernel>=6.0
+
+# Optional causal stack
+# Install these if you want Notebook 04 validation against external libraries.
+econml>=0.15
+causalml>=0.15
+doubleml>=0.7

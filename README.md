@@ -1,6 +1,6 @@
 # uplift-modeling-causal-ml
 
-Senior-level Causal ML / Uplift Modeling portfolio project for marketing campaign decisioning under budget constraints.
+Causal ML / Uplift Modeling portfolio project for marketing campaign decisioning under budget constraints.
 
 ## 1. Project motivation
 Most marketing models answer: "Who is likely to convert?"  

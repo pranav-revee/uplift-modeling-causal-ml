@@ -15,53 +15,47 @@ This project answers the decision question:
 
 > Who is likely to convert because of the campaign?
 
-The pipeline ranks customers by predicted incremental effect and evaluates targeting policies by incremental conversions and simulated incremental revenue.
+The workflow ranks customers by predicted incremental effect and evaluates targeting policies by incremental conversions and simulated incremental revenue.
 
 ## Project overview
-This repo uses the Hillstrom Email Marketing dataset to build a full uplift workflow:
+This project uses the Hillstrom Email Marketing dataset to build a complete uplift workflow from causal framing to policy recommendation.
 
-1. EDA and causal framing
-2. Naive response baseline vs uplift baseline
-3. S, T, X meta-learners
-4. DR-style modern causal estimator
-5. Policy simulation under budget constraints
-6. Optional TARNet extension
-
-Core business question:
+Core objective:
 
 > Which customers should receive an email campaign to maximize incremental conversions and incremental revenue, not just conversion propensity?
 
 ## Why this matters
-Response modeling can over-target customers who would convert anyway.
-Uplift modeling focuses on persuadable users and supports better budget allocation.
+Traditional response models often prioritize likely buyers who may have converted anyway. Uplift modeling is closer to campaign decision making because it targets expected incremental impact.
 
 ### Marketing intuition
 
-| Customer type | Meaning | Target? |
+| Customer type | What it means | Should we target? |
 | --- | --- | --- |
-| Persuadables | More likely to convert because of email | Yes |
-| Sure Things | Convert with or without email | Usually no |
+| Persuadables | More likely to convert because of the email | Yes |
+| Sure Things | Likely to convert with or without email | Usually no |
 | Lost Causes | Unlikely to convert either way | No |
-| Sleeping Dogs | May convert less if contacted | Avoid |
+| Sleeping Dogs | Might convert less if contacted | Avoid |
 
-## Business framing
-This is a budgeted policy problem, not just a prediction problem.
+## Business problem
+This is a budgeted policy problem.
 
-- budget is finite
-- customer attention is finite
+- marketing budget is limited
+- customer attention is limited
 - over-targeting can create fatigue
-- objective is incremental value
+- the objective is incremental value
 
-Primary optimization target in this repo:
+Primary optimization target:
 
-- primary outcome: `conversion`
-- secondary outcomes: `visit`, `spend`
+- Primary outcome: `conversion`
+- Secondary outcomes: `visit`, `spend`
 
 ## Dataset
-Primary dataset: Kevin Hillstrom MineThatData Email Marketing dataset.
-Canonical path: `data/hillstrom.csv`.
+Primary dataset: Kevin Hillstrom and MineThatData Email Marketing dataset.
 
-Original setup is usually 3-arm:
+- Canonical path: `data/hillstrom.csv`
+- Approximate size: 64,000 customers
+
+Original treatment setup is usually 3-arm:
 
 - `No E-Mail`
 - `Mens E-Mail`
@@ -72,88 +66,115 @@ Modeling simplification used in this repo:
 - treated = any email (`Mens E-Mail` or `Womens E-Mail`)
 - control = no email (`No E-Mail`)
 
-This binary simplification is intentional and explicit.
+This binary treatment setup is intentional and explicit.
 
 ## Causal framing
 Potential outcomes perspective:
 
-- `Y(1)`: outcome if treated
-- `Y(0)`: outcome if untreated
-- treatment effect: `tau(x) = E[Y(1) - Y(0) | X=x]`
+- `Y(1)` = outcome if treated
+- `Y(0)` = outcome if untreated
+- `tau(x) = E[Y(1) - Y(0) | X=x]`
 
-For each person, only one potential outcome is observed.
-That is why uplift modeling is harder than response prediction and more relevant for targeting decisions.
+Only one potential outcome is observed for each user. This is the core challenge of causal inference and why uplift modeling differs from standard prediction.
 
 ## Feature governance
-To keep the setup causally sensible:
+To keep the setup causally valid:
 
-- all model features are pre-treatment covariates only
+- all model training uses pre-treatment covariates only
 - outcomes and treatment-derived labels are excluded from features
 - shared preprocessing and split logic are reused across notebooks
 
 ## Methods
 ### Classical uplift foundation
 
-| Method | Purpose |
-| --- | --- |
-| Naive treated-response model | Shows why propensity ranking is not enough |
-| Two-model uplift baseline | Strong practical uplift baseline |
-| S-Learner | Single model with treatment as a feature |
-| T-Learner | Separate treatment/control outcome models |
-| X-Learner | Second-stage effect modeling for CATE |
+| Method | Intuition | Why included |
+| --- | --- | --- |
+| Naive treated-response model | Predict conversion in treated users only | Shows why response ranking is not enough |
+| Two-model uplift baseline | Fit treated and control models separately and subtract | Strong practical baseline |
+| S-Learner | One model with treatment as a feature | Compact baseline |
+| T-Learner | Separate treatment and control outcome models | Often strong on tabular data |
+| X-Learner | Two-stage effect modeling | Useful when arm behavior differs |
 
 ### Modern causal and policy layer
 
-| Method / component | Purpose |
+| Method or component | Purpose |
 | --- | --- |
-| DR-style learner | Doubly robust style CATE estimation |
-| Optional orthogonal forest | Additional modern causal validation |
-| Policy simulation | Converts scores into business actions |
-| Budget sensitivity analysis | Measures value across targeting budgets |
+| DR-style learner | More robust CATE estimation via outcome plus propensity modeling |
+| Optional orthogonal or forest validation | Modern causal challenger methods |
+| Policy simulation | Translate scores into campaign actions |
+| Budget sensitivity analysis | Measure value across targeting budgets |
 
-### Optional deep extension
+### Advanced extension
 
 | Method | Purpose |
 | --- | --- |
-| TARNet | Representation-learning uplift extension |
+| TARNet | Optional deep representation-learning uplift extension |
 
 ## Evaluation framework
 Core ranking metrics:
 
-- uplift curve
+- Uplift curve
 - Qini coefficient
 - AUUC
-- cumulative gain
-- uplift by decile
+- Cumulative gain
+- Uplift by decile
 
-Policy metrics:
+Policy-oriented metrics:
 
-- policy value at budget
-- incremental conversions at budget
-- incremental revenue at budget
-- budget sensitivity curves
+- Policy value at budget
+- Incremental conversions at budget
+- Incremental revenue at budget
+- Budget sensitivity analysis
 
 Important caveat:
 
-Qini and AUUC are ranking metrics. They do not prove perfectly estimated individual treatment effects.
+Qini and AUUC are ranking metrics. They are not direct proof that every individual treatment effect is perfectly estimated.
 
-## Workflow diagram
+## Project workflow
 ```mermaid
 flowchart LR
-    A[Hillstrom dataset] --> B[EDA and causal framing]
-    B --> C[Naive response baseline]
-    B --> D[Two-model uplift baseline]
-    D --> E[S, T, X meta-learners]
-    E --> F[DR-style estimator]
-    F --> G[Policy simulation]
-    G --> H[Budget-constrained targeting]
-    H --> I[Incremental value recommendation]
+    A[Hillstrom Dataset] --> B[EDA and Causal Framing]
+    B --> C[Naive Response Model]
+    B --> D[Two-Model Uplift Baseline]
+    D --> E[S, T, X Learners]
+    E --> F[DR-Style Learner]
+    F --> G[Policy Simulation]
+    G --> H[Budget-Constrained Targeting]
+    H --> I[Incremental Revenue Recommendation]
 ```
 
-## Current results snapshot
-These results come from the current offline run using shared split logic and seed 42.
+## Key visuals
+### Treatment balance and causal setup
+Update paths below if your filenames differ.
 
-### Model ranking metrics
+| Treatment balance | Outcome rates by group |
+| --- | --- |
+| ![Treatment balance](outputs/figures/nb01_treatment_control_counts.png) | ![Outcome rates by group](outputs/figures/nb01_conversion_rate_by_group.png) |
+
+| Spend comparison | Standardized mean differences |
+| --- | --- |
+| ![Spend comparison](outputs/figures/nb01_spend_by_group.png) | ![Standardized mean differences](outputs/figures/nb01_smd_balance_plot.png) |
+
+### Model comparison and policy impact
+
+| Baseline uplift comparison | Meta-learner comparison |
+| --- | --- |
+| ![Baseline uplift comparison](outputs/figures/nb02_qini_baselines.png) | ![Meta-learner comparison](outputs/figures/nb03_qini_meta_learner_comparison.png) |
+
+| DR learner diagnostics | Budget sensitivity |
+| --- | --- |
+| ![DR learner diagnostics](outputs/figures/nb04_drlearner_overlap.png) | ![Budget sensitivity](outputs/figures/nb05_budget_sensitivity_revenue.png) |
+
+## Key results
+### Current offline snapshot
+Using a shared split strategy and `random_state = 42`:
+
+- The two-model uplift baseline outperformed the naive treated-response model on Qini and AUUC.
+- Among S, T, and X learners, the T-Learner performed best on the current split.
+- In offline policy simulations, uplift-aware targeting policies outperformed naive and random targeting across multiple budget levels.
+- A manual DR-style implementation did not beat the strongest classical uplift models on the current run.
+
+### Model metric table
 
 | Model | Qini | AUUC |
 | --- | ---: | ---: |
@@ -162,88 +183,134 @@ These results come from the current offline run using shared split logic and see
 | x_learner | 1.584 | 23.036 |
 | dr_learner (manual fallback) | -1.996 | 19.456 |
 
-### Policy summary (from Notebook 05)
+### Policy summary table
 
 | Model | Best budget range | Incremental conversions @ top 20% | Incremental revenue @ top 20% | Recommendation |
 | --- | ---: | ---: | ---: | --- |
-| two_model_uplift | 0.9 | 21.06 | 2451.13 | Primary deploy candidate |
-| t_learner | 0.9 | 21.06 | 2451.13 | Primary deploy candidate |
+| two_model_uplift | 0.9 | 21.06 | 2451.13 | Primary deployment candidate |
+| t_learner | 0.9 | 21.06 | 2451.13 | Primary deployment candidate |
 | naive_response | 0.8 | 21.33 | 2482.56 | Baseline only, not causal-targeting aligned |
-| dr_manual_fallback | 0.9 | 9.02 | 1049.32 | Challenger, needs nuisance tuning |
+| dr_manual_fallback | 0.9 | 9.02 | 1049.32 | Challenger, tune nuisance models |
 
-### Takeaways
-- Uplift-aware models improved targeting quality vs naive propensity ranking.
-- Classical uplift learners were highly competitive on this tabular dataset.
-- The current DR-style fallback did not win on this split, which supports an honest and realistic model-selection story.
-- Deployment choice should balance business value, model stability, and operating complexity.
+### Interpretation
+This result pattern is useful and realistic.
 
-## Visual results
-The figures below are generated by notebook runs into `outputs/figures`.
+It suggests that:
 
-### Baselines and uplift curves
-![NB02 Qini](outputs/figures/nb02_qini_baselines.png)
-![NB02 Top-k policy](outputs/figures/nb02_topk_policy_naive_vs_uplift.png)
+- uplift-aware ranking improves campaign decisioning
+- causal framing matters more than simple propensity ranking
+- more complex estimators are not automatically better on medium-sized tabular marketing data
+- model complexity should be judged by policy value, not method sophistication alone
 
-### Meta-learner comparison
-![NB03 Qini](outputs/figures/nb03_qini_meta_learner_comparison.png)
+## Deployment recommendation
+Based on current offline evidence:
 
-### Policy and business impact
-![NB05 Model comparison](outputs/figures/nb05_model_qini_comparison.png)
-![NB05 Revenue sensitivity](outputs/figures/nb05_budget_sensitivity_revenue.png)
+- Primary deployment candidate: two-model uplift or T-Learner
+- Why: stronger and more stable ranking behavior on the current split with better downstream policy value than naive targeting
+- Challenger model: DR-style learner after stronger nuisance tuning or official library validation
+- Final validation requirement: online testing before production rollout
 
-## Notebook roadmap
-1. `notebooks/01_eda_problem_framing.ipynb`
-2. `notebooks/02_naive_and_two_model_baselines.ipynb`
-3. `notebooks/03_meta_learners_s_t_x.ipynb`
-4. `notebooks/04_modern_causal_ml_dr_learner.ipynb`
-5. `notebooks/05_policy_evaluation_and_business_impact.ipynb`
-6. `notebooks/06_optional_tarnet_deep_uplift.ipynb`
+### Practical recommendation
+A simpler uplift-aware model can be preferable when it offers:
 
-Notebook 06 is optional and positioned as a research extension.
+- competitive policy performance
+- easier debugging
+- easier stakeholder explanation
+- lower maintenance cost
 
-## Repository structure
-```text
-uplift-modeling-causal-ml/
-├── data/
-│   └── hillstrom.csv
-├── notebooks/
-├── src/
-├── outputs/
-│   ├── figures/
-│   ├── tables/
-│   ├── models/
-│   └── .gitkeep
-├── requirements.txt
-├── README.md
-└── .gitignore
-```
+## Offline policy assumptions used in Notebook 05
+The revenue and policy sections are framed as offline simulation, not production proof.
+
+Assumptions:
+
+- model ranking is based on predicted uplift or CATE scores
+- incremental conversions are estimated from observed treatment and control outcomes within ranked buckets
+- incremental revenue is approximated using observed spend or average order value assumptions
+- these are offline policy evaluation estimates, not causal proof of realized production revenue lift
 
 ## How to run
-1. Create Python 3.10+ environment.
-2. Install dependencies:
-   - `pip install -r requirements.txt`
-3. Launch Jupyter:
-   - `jupyter lab`
-4. Run notebooks in order from 01 to 05 for the core workflow.
+### Environment
+- Python 3.10+
+- On macOS, prefer native arm64 Python on Apple Silicon instead of Rosetta
 
-Execution defaults:
+### Install dependencies
+```bash
+pip install -r requirements.txt
+```
 
-- seed = `42`
-- tabular baseline preference = `XGBoost` CPU with `tree_method="hist"`
-- optional deep notebook uses Torch MPS on Apple Silicon when available, else CPU
+### Start Jupyter
+```bash
+jupyter lab
+```
 
-## Offline policy assumptions
-- rankings are based on predicted uplift scores
-- incremental conversions are estimated from observed treatment/control outcomes in ranked buckets
-- incremental revenue uses average order value or spend-based assumptions
-- results are offline policy estimates, not proof of production causal lift
+or
+
+```bash
+jupyter notebook
+```
+
+### Execution order
+Run notebooks in this order:
+
+1. `01_eda_problem_framing.ipynb`
+2. `02_naive_and_two_model_baselines.ipynb`
+3. `03_meta_learners_s_t_x.ipynb`
+4. `04_modern_causal_ml_dr_learner.ipynb`
+5. `05_policy_evaluation_and_business_impact.ipynb`
+6. `06_optional_tarnet_deep_uplift.ipynb`
+
+### Execution defaults
+- Global random seed: `42`
+- Baseline learner preference: XGBoost CPU with `tree_method="hist"`
+- LightGBM supported as an alternative
+- Deep notebook uses Torch MPS when available, otherwise CPU fallback
+
+## Reproducibility notes
+- Shared split strategy is locked across Notebooks 02 to 05
+- Random state is fixed to 42
+- Binary treatment is derived as:
+
+```python
+treatment = (segment != "No E-Mail").astype(int)
+```
+
+- Modeling target defaults to conversion
+
+## Limitations
+This repo is practical, but has important limitations:
+
+- offline uplift evaluation is not the same as online causal validation
+- treatment is simplified from the original 3-arm design into a binary setup
+- individual treatment effects are latent and noisy
+- incremental revenue is estimated under offline assumptions
+- model rankings may vary across splits and tuning choices
+- deep causal models may require environment-specific runtime fixes
 
 ## Future work
-- stronger DR nuisance tuning and calibration
-- double machine learning extensions
-- orthogonal and causal forests
-- policy learning and constrained optimization
-- multi-treatment uplift without binary collapse
-- continuous dosage optimization
-- fairness and responsible targeting
-- temporal uplift and drift-aware retraining
+- improve doubly robust estimation and nuisance tuning
+- add DML and orthogonal or causal forest variants
+- restore full multi-treatment setup
+- explore direct policy learning
+- add treatment effect calibration analysis
+- study fairness and responsible targeting
+- extend to dynamic uplift over time
+- explore continuous treatment or dosage optimization
+
+## Tech stack
+- Python
+- pandas
+- numpy
+- scikit-learn
+- xgboost
+- lightgbm
+- pytorch
+- matplotlib
+- seaborn
+- umap-learn
+- jupyter
+
+## Contact
+If you are reviewing this repo for data science, causal inference, experimentation, or marketing analytics roles, you can connect through GitHub.
+
+## License
+Add your preferred license, for example MIT.
